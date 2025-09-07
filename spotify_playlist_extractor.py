@@ -32,6 +32,7 @@ import base64
 import argparse
 import subprocess
 import shutil
+from datetime import datetime
 from pathlib import Path
 from urllib.parse import urlparse, parse_qs
 import requests
@@ -114,15 +115,16 @@ class SpotifyPlaylistExtractor:
             
         return None
     
-    def get_playlist_tracks(self, playlist_id: str) -> List[Dict]:
+    def get_playlist_tracks(self, playlist_id: str, added_after: Optional[str] = None) -> List[Dict]:
         """
         Get all tracks from a playlist using pagination.
         
         Args:
             playlist_id: Spotify playlist ID
+            added_after: Optional date filter (YYYY-MM-DD format)
             
         Returns:
-            List[Dict]: List of track objects
+            List[Dict]: List of track objects (with added_at info if filtering)
         """
         if not self.access_token:
             raise ValueError("Not authenticated. Call authenticate() first.")
@@ -135,9 +137,15 @@ class SpotifyPlaylistExtractor:
         all_tracks = []
         url = f"{self.base_url}/playlists/{playlist_id}/tracks"
         
+        # Include added_at field if we need to filter by date
+        if added_after:
+            fields = "items(added_at,track(external_urls,name,artists(name),id,uri,href)),next,total"
+        else:
+            fields = "items(track(external_urls,name,artists(name),id,uri,href)),next,total"
+        
         # Parameters for the request
         params = {
-            "fields": "items(track(external_urls,name,artists(name),id,uri,href)),next,total",
+            "fields": fields,
             "limit": 100,  # Maximum allowed
             "offset": 0
         }
@@ -160,7 +168,13 @@ class SpotifyPlaylistExtractor:
                 for item in items:
                     track = item.get("track")
                     if track and track.get("id"):  # Skip null/deleted tracks
-                        all_tracks.append(track)
+                        # If filtering by date, check the added_at field
+                        if added_after:
+                            added_at = item.get("added_at")
+                            if added_at and self._is_track_added_after(added_at, added_after):
+                                all_tracks.append(track)
+                        else:
+                            all_tracks.append(track)
                 
                 # Check for next page
                 url = data.get("next")
@@ -172,8 +186,35 @@ class SpotifyPlaylistExtractor:
                 print(f"✗ Error fetching tracks: {e}", file=sys.stderr)
                 break
         
-        print(f"✓ Retrieved {len(all_tracks)} tracks total", file=sys.stderr)
+        if added_after:
+            print(f"✓ Retrieved {len(all_tracks)} tracks total (filtered by date: after {added_after})", file=sys.stderr)
+        else:
+            print(f"✓ Retrieved {len(all_tracks)} tracks total", file=sys.stderr)
         return all_tracks
+    
+    def _is_track_added_after(self, added_at: str, date_filter: str) -> bool:
+        """
+        Check if a track was added after the specified date.
+        
+        Args:
+            added_at: ISO format datetime string from Spotify API
+            date_filter: Date string in YYYY-MM-DD format
+            
+        Returns:
+            bool: True if track was added after the filter date
+        """
+        try:
+            # Parse the added_at datetime (format: 2023-01-15T14:30:00Z)
+            track_date = datetime.fromisoformat(added_at.replace('Z', '+00:00'))
+            
+            # Parse the filter date (format: 2023-01-15)
+            filter_date = datetime.strptime(date_filter, '%Y-%m-%d')
+            
+            # Compare dates (ignoring time for the filter date)
+            return track_date.date() > filter_date.date()
+        except (ValueError, AttributeError) as e:
+            print(f"Warning: Could not parse date '{added_at}' or '{date_filter}': {e}", file=sys.stderr)
+            return True  # Include track if date parsing fails
     
     def extract_track_urls(self, tracks: List[Dict]) -> List[str]:
         """
@@ -447,6 +488,9 @@ Examples:
   
   # Download with custom settings
   %(prog)s "https://open.spotify.com/playlist/37i9dQZF1DXcBWIGoYBM5M" --download --output-dir ~/Music/DJ --overwrite skip --quality best
+  
+  # Only download tracks added after a specific date
+  %(prog)s "https://open.spotify.com/playlist/37i9dQZF1DXcBWIGoYBM5M" --download --added-after 2024-01-01
         """
     )
     parser.add_argument(
@@ -497,6 +541,11 @@ Examples:
         default=20,
         help="Timeout in seconds for each individual track download (default: 20)"
     )
+    parser.add_argument(
+        "--added-after",
+        type=str,
+        help="Only include tracks added after this date (format: YYYY-MM-DD, e.g., 2023-01-15)"
+    )
     
     args = parser.parse_args()
     
@@ -530,8 +579,16 @@ Examples:
                     print(f"Description: {info['description']}", file=sys.stderr)
                 print("", file=sys.stderr)
         
+        # Validate date filter if provided
+        if args.added_after:
+            try:
+                datetime.strptime(args.added_after, '%Y-%m-%d')
+            except ValueError:
+                print(f"✗ Invalid date format: {args.added_after}. Please use YYYY-MM-DD format (e.g., 2023-01-15)", file=sys.stderr)
+                sys.exit(1)
+        
         # Get tracks
-        tracks = extractor.get_playlist_tracks(playlist_id)
+        tracks = extractor.get_playlist_tracks(playlist_id, args.added_after)
         
         if not tracks:
             print("No tracks found in playlist", file=sys.stderr)
