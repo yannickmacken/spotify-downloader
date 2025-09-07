@@ -2,6 +2,18 @@
 
 A Python script that extracts track URLs from Spotify playlists and downloads them as MP3 files using spotDL.
 
+## Quick Start
+
+If you already have the dependencies installed and configured:
+
+```bash
+# Activate virtual environment (if using one)
+source venv/bin/activate
+
+# Run the script
+python spotify_playlist_extractor.py "https://open.spotify.com/playlist/YOUR_PLAYLIST_ID" --download
+```
+
 ## Prerequisites
 
 1. **Python 3.6+** installed on your system
@@ -24,29 +36,39 @@ A Python script that extracts track URLs from Spotify playlists and downloads th
 
 4. **Install dependencies** (including spotDL):
    ```bash
+   # Create a virtual environment (recommended)
+   python3 -m venv venv
+   source venv/bin/activate
+   
+   # Install dependencies
    pip install -r requirements.txt
    ```
 
 ## Usage
 
+**Note:** If you installed dependencies in a virtual environment, activate it first:
+```bash
+source venv/bin/activate
+```
+
 ### Basic URL extraction:
 ```bash
-python3 spotify_playlist_extractor.py "https://open.spotify.com/playlist/PLAYLIST_ID"
+python spotify_playlist_extractor.py "https://open.spotify.com/playlist/PLAYLIST_ID"
 ```
 
 ### Download MP3 files:
 ```bash
-python3 spotify_playlist_extractor.py "https://open.spotify.com/playlist/PLAYLIST_ID" --download
+python spotify_playlist_extractor.py "https://open.spotify.com/playlist/PLAYLIST_ID" --download
 ```
 
 ### Download with custom settings:
 ```bash
-python3 spotify_playlist_extractor.py "playlist_url" --download --output-dir ~/Music/MyPlaylist --timeout 30
+python spotify_playlist_extractor.py "playlist_url" --download --output-dir ~/Music/MyPlaylist --timeout 30
 ```
 
-### Using the shell wrapper (easier):
+### Alternative: Run directly with venv Python (no activation needed):
 ```bash
-./run_extractor.sh "playlist_url" --download
+venv/bin/python spotify_playlist_extractor.py "playlist_url" --download
 ```
 
 ## Options
@@ -62,16 +84,16 @@ python3 spotify_playlist_extractor.py "playlist_url" --download --output-dir ~/M
 
 ```bash
 # Just extract URLs
-python3 spotify_playlist_extractor.py "https://open.spotify.com/playlist/37i9dQZF1DXcBWIGoYBM5M"
+python spotify_playlist_extractor.py "https://open.spotify.com/playlist/37i9dQZF1DXcBWIGoYBM5M"
 
 # Download to current directory  
-python3 spotify_playlist_extractor.py "https://open.spotify.com/playlist/37i9dQZF1DXcBWIGoYBM5M" --download
+python spotify_playlist_extractor.py "https://open.spotify.com/playlist/37i9dQZF1DXcBWIGoYBM5M" --download
 
 # Download to specific folder with 30s timeout
-python3 spotify_playlist_extractor.py "https://open.spotify.com/playlist/37i9dQZF1DXcBWIGoYBM5M" --download --output-dir ~/Music/DJ --timeout 30
+python spotify_playlist_extractor.py "https://open.spotify.com/playlist/37i9dQZF1DXcBWIGoYBM5M" --download --output-dir ~/Music/DJ --timeout 30
 
 # Show playlist info and export as JSON
-python3 spotify_playlist_extractor.py "https://open.spotify.com/playlist/37i9dQZF1DXcBWIGoYBM5M" --info --format json
+python spotify_playlist_extractor.py "https://open.spotify.com/playlist/37i9dQZF1DXcBWIGoYBM5M" --info --format json
 ```
 
 ## Notes
