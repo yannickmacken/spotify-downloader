@@ -79,6 +79,7 @@ venv/bin/python spotify_playlist_extractor.py "playlist_url" --download
 - `--overwrite` - How to handle existing files: `skip`, `force`, `prompt` (default: skip)
 - `--format` - Output format for URLs: `urls`, `json`, `csv` (default: urls)
 - `--info` - Show playlist information before processing
+- `--added-after` - Only include tracks added to playlist after specified date (format: YYYY-MM-DD, excludes the specified date)
 
 ## Examples
 
@@ -94,6 +95,9 @@ python spotify_playlist_extractor.py "https://open.spotify.com/playlist/37i9dQZF
 
 # Show playlist info and export as JSON
 python spotify_playlist_extractor.py "https://open.spotify.com/playlist/37i9dQZF1DXcBWIGoYBM5M" --info --format json
+
+# Download only tracks added after January 1, 2024 (excludes Jan 1st itself)
+python spotify_playlist_extractor.py "https://open.spotify.com/playlist/37i9dQZF1DXcBWIGoYBM5M" --download --added-after 2024-01-01
 ```
 
 ## Notes
@@ -102,6 +106,7 @@ python spotify_playlist_extractor.py "https://open.spotify.com/playlist/37i9dQZF
 - **Liked songs** - Cannot access liked songs directly. Create a playlist from your liked songs and use that URL instead
 - **Existing files** - By default, existing MP3 files are skipped to avoid re-downloading
 - **Timeout protection** - Each track download has a timeout to prevent hanging on problematic tracks
+- **Date filtering** - The `--added-after` parameter excludes tracks added on the specified date itself (strictly "after")
 
 ## Troubleshooting
 
